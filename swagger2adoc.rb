@@ -36,6 +36,50 @@ paths.each do |path, methods|
     paths_adoc << ""
     paths_adoc << description
     paths_adoc << ""
+
+    # Consumes (MIME types)
+    mime_types = []
+    if details.dig('requestBody', 'content')
+      mime_types = details['requestBody']['content'].keys
+    end
+    if mime_types.any?
+      paths_adoc << "==== Consumes"
+      mime_types.each { |type| paths_adoc << "* `#{type}`" }
+      paths_adoc << ""
+    end
+
+    # Responses
+    responses = details['responses'] || {}
+    if responses.any?
+      paths_adoc << "==== Responses"
+      responses.each do |status, resp|
+        paths_adoc << "* `#{status}`: #{resp['description']}"
+      end
+      paths_adoc << ""
+    end
+
+    # Example response
+    example = nil
+    responses.each do |_, resp|
+      content = resp['content']&.values&.first
+      if content && content['examples']
+        example_obj = content['examples'].values.first
+        example = example_obj['value'] if example_obj
+      elsif content && content['example']
+        example = content['example']
+      end
+
+      break if example
+    end
+
+    if example
+      paths_adoc << "==== Example Response"
+      paths_adoc << "[source,json]"
+      paths_adoc << "----"
+      paths_adoc << JSON.pretty_generate(example)
+      paths_adoc << "----"
+      paths_adoc << ""
+    end
   end
 end
 File.write(File.join(output_dir, 'paths.adoc'), paths_adoc.join("\n"))
