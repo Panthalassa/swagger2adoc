@@ -37,6 +37,39 @@ paths.each do |path, methods|
     paths_adoc << description
     paths_adoc << ""
 
+    # ==== Parameters ====
+    all_params = []
+    all_params += details['parameters'] if details['parameters']
+    all_params += methods['parameters'] if methods['parameters'] # fallback if declared at path level
+
+    if all_params.any?
+      paths_adoc << "==== Parameters"
+      paths_adoc << "[cols=\"1,1,1,1\", options=\"header\"]"
+      paths_adoc << "|==="
+      paths_adoc << "| Name | In | Required | Description"
+
+      all_params.each do |param|
+        name = param['name']
+        loc  = param['in']
+        required = param['required'] ? 'true' : 'false'
+        desc = param['description'] || ''
+        paths_adoc << "| #{name} | #{loc} | #{required} | #{desc}"
+      end
+
+      paths_adoc << "|==="
+      paths_adoc << ""
+    end
+    
+    # Responses
+    responses = details['responses'] || {}
+    if responses.any?
+      paths_adoc << "==== Responses"
+      responses.each do |status, resp|
+        paths_adoc << "* `#{status}`: #{resp['description']}"
+      end
+      paths_adoc << ""
+    end
+
     # Consumes (MIME types)
     mime_types = []
     if details.dig('requestBody', 'content')
@@ -45,16 +78,6 @@ paths.each do |path, methods|
     if mime_types.any?
       paths_adoc << "==== Consumes"
       mime_types.each { |type| paths_adoc << "* `#{type}`" }
-      paths_adoc << ""
-    end
-
-    # Responses
-    responses = details['responses'] || {}
-    if responses.any?
-      paths_adoc << "==== Responses"
-      responses.each do |status, resp|
-        paths_adoc << "* `#{status}`: #{resp['description']}"
-      end
       paths_adoc << ""
     end
 
